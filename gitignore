@@ -1,0 +1,48 @@
+# ── Model file (too large for GitHub — upload separately to HF Spaces) ──
+*.pt
+*.pth
+*.ckpt
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environments ──
+env/
+venv/
+ENV/
+.venv/
+
+# ── Jupyter / Kaggle notebooks ──
+.ipynb_checkpoints/
+*.ipynb
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──
+*.log
+logs/
+
+# ── Test images ──
+*.jpg
+*.jpeg
+*.png
+*.webp

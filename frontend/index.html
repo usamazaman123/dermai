@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DermAI — Skin Cancer Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:    #ffffff;
+  --off:      #f7f8fa;
+  --border:   #e4e8ee;
+  --muted:    #8a93a2;
+  --body:     #2c3340;
+  --heading:  #111827;
+  --teal:     #0d9488;
+  --teal-lt:  #f0fdfa;
+  --teal-md:  #ccfbf1;
+  --teal-dk:  #0f766e;
+  --amber:    #d97706;
+  --amber-lt: #fffbeb;
+  --red:      #dc2626;
+  --red-lt:   #fef2f2;
+  --green:    #16a34a;
+  --green-lt: #f0fdf4;
+  --radius:   12px;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,.09);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Figtree', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--body);
+  background: var(--off);
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--heading);
+  letter-spacing: -.3px;
+}
+.logo span { color: var(--teal); }
+.nav-badge {
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--teal-lt);
+  color: var(--teal-dk);
+  border: 1px solid var(--teal-md);
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: .3px;
+}
+
+/* ── HERO ── */
+.hero {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 3.5rem 2rem 3rem;
+  text-align: center;
+}
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 300;
+  color: var(--heading);
+  line-height: 1.15;
+  letter-spacing: -.5px;
+  margin-bottom: .75rem;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--teal);
+}
+.hero p {
+  max-width: 520px;
+  margin: 0 auto 1.5rem;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 300;
+}
+.disclaimer-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--amber-lt);
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--amber);
+  font-weight: 500;
+}
+.disclaimer-banner::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+}
+
+/* ── MAIN ── */
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  main { grid-template-columns: 1fr; }
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.75rem;
+}
+.card-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--heading);
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── UPLOAD ZONE ── */
+#drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+  overflow: hidden;
+}
+#drop-zone:hover, #drop-zone.drag-over {
+  border-color: var(--teal);
+  background: var(--teal-lt);
+}
+#drop-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+}
+.upload-icon {
+  width: 48px; height: 48px;
+  margin: 0 auto 1rem;
+  background: var(--teal-lt);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-icon svg { width: 24px; height: 24px; stroke: var(--teal); fill: none; }
+.upload-title {
+  font-weight: 500;
+  color: var(--heading);
+  margin-bottom: .3rem;
+}
+.upload-sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── IMAGE PREVIEW ── */
+#preview-wrap {
+  display: none;
+  margin-top: 1.25rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  position: relative;
+}
+#preview-wrap img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+#preview-wrap .remove-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,0,0,.55);
+  border: none; color: #fff;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+#preview-wrap .remove-btn:hover { background: var(--red); }
+
+/* ── ANALYSE BUTTON ── */
+#analyse-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 13px;
+  background: var(--teal);
+  color: #fff;
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+#analyse-btn:hover:not(:disabled) { background: var(--teal-dk); }
+#analyse-btn:active:not(:disabled) { transform: scale(.99); }
+#analyse-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+/* ── RESULT PANEL ── */
+#result-panel { display: none; }
+
+/* Prediction hero */
+.pred-hero {
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.pred-hero.high   { background: var(--red-lt);   border: 1px solid #fca5a5; }
+.pred-hero.medium { background: var(--amber-lt);  border: 1px solid #fcd34d; }
+.pred-hero.low    { background: var(--green-lt);  border: 1px solid #86efac; }
+
+.severity-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.high   .severity-dot { background: var(--red); }
+.medium .severity-dot { background: var(--amber); }
+.low    .severity-dot { background: var(--green); }
+
+.pred-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--heading);
+  line-height: 1.2;
+}
+.pred-severity {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.high   .pred-severity { color: var(--red); }
+.medium .pred-severity { color: var(--amber); }
+.low    .pred-severity { color: var(--green); }
+
+/* Confidence bar */
+.conf-section { margin-bottom: 1.25rem; }
+.conf-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--body);
+  margin-bottom: .5rem;
+}
+.conf-track {
+  height: 8px;
+  background: var(--off);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--teal);
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+  width: 0;
+}
+
+/* Top 3 */
+.top3-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .75rem;
+}
+.top3-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.top3-item:last-child { border-bottom: none; }
+.top3-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--body);
+}
+.top3-bar-wrap {
+  width: 100px;
+  height: 5px;
+  background: var(--off);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.top3-bar {
+  height: 100%;
+  background: var(--teal-md);
+  border-radius: 99px;
+  transition: width 1s .2s cubic-bezier(.4,0,.2,1);
+  width: 0;
+}
+.top3-bar.first { background: var(--teal); }
+.top3-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Disclaimer box */
+.result-disclaimer {
+  margin-top: 1.25rem;
+  background: var(--off);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--muted);
+}
+.empty-icon {
+  width: 56px; height: 56px;
+  background: var(--off);
+  border-radius: 14px;
+  margin: 0 auto 1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.empty-icon svg { width: 28px; height: 28px; stroke: var(--muted); fill: none; }
+.empty-state p { font-size: 14px; }
+
+/* Loading state */
+#loading { display: none; text-align: center; padding: 3rem 1.5rem; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--teal-md);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--muted); }
+
+/* Info cards at bottom */
+.info-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: .5rem;
+}
+.info-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.info-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .4rem;
+}
+.info-card-value {
+  font-family: 'Crimson Pro', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--heading);
+}
+.info-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ── CLASSES SECTION ── */
+.classes-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .75rem;
+}
+.class-pill {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.class-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.class-name { font-size: 13px; font-weight: 500; color: var(--heading); }
+.class-severity { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* section heading */
+.section-heading {
+  grid-column: 1 / -1;
+  font-family: 'Crimson Pro', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--heading);
+  margin-top: 1rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--white);
+}
+
+/* ── PAGE LOAD ANIMATION ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp .5s ease forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up:nth-child(1) { animation-delay: .05s; }
+.fade-up:nth-child(2) { animation-delay: .12s; }
+.fade-up:nth-child(3) { animation-delay: .18s; }
+.fade-up:nth-child(4) { animation-delay: .24s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Derm<span>AI</span></div>
+  <span class="nav-badge">Research Tool — Not for Clinical Use</span>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">AI-powered dermatology</p>
+  <h1>Skin lesion analysis<br>powered by <em>deep learning</em></h1>
+  <p>Upload a dermoscopy or clinical photo. Our EfficientNet-B0 model — trained on 10,000 labeled images — will classify the lesion in under 2 seconds.</p>
+  <div class="disclaimer-banner">Educational tool only — not a substitute for medical diagnosis</div>
+</section>
+
+<!-- MAIN -->
+<main>
+
+  <!-- Upload card -->
+  <div class="card fade-up">
+    <div class="card-title">Upload image</div>
+
+    <div id="drop-zone">
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp"/>
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+        </svg>
+      </div>
+      <p class="upload-title">Drop image here or click to browse</p>
+      <p class="upload-sub">JPEG, PNG or WebP — max 10MB</p>
+    </div>
+
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="Preview"/>
+      <button class="remove-btn" id="remove-btn" title="Remove">✕</button>
+    </div>
+
+    <button id="analyse-btn" disabled>Analyse image</button>
+  </div>
+
+  <!-- Result card -->
+  <div class="card fade-up">
+    <div class="card-title">Analysis result</div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      <p>Upload a skin image to see the AI analysis result here.</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <p class="loading-text">Analysing image…</p>
+    </div>
+
+    <!-- Result -->
+    <div id="result-panel"></div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="info-grid fade-up">
+    <div class="info-card">
+      <div class="info-card-label">Dataset</div>
+      <div class="info-card-value">HAM10000</div>
+      <div class="info-card-sub">10,015 dermoscopy images</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Model</div>
+      <div class="info-card-value">EfficientNet-B0</div>
+      <div class="info-card-sub">Fine-tuned on 7 classes</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Val accuracy</div>
+      <div class="info-card-value" id="stat-acc">—</div>
+      <div class="info-card-sub">On held-out test set</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-label">Inference time</div>
+      <div class="info-card-value" id="stat-time">—</div>
+      <div class="info-card-sub">Per image on CPU/GPU</div>
+    </div>
+  </div>
+
+  <!-- Classes section -->
+  <h2 class="section-heading fade-up">Detectable conditions</h2>
+  <div class="classes-grid fade-up" id="classes-grid">
+    <!-- Populated by JS -->
+  </div>
+
+</main>
+
+<footer>
+  DermAI is a research prototype. Always consult a qualified dermatologist for any skin-related concerns.
+</footer>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+const CLASSES = [
+  { code: "mel",   name: "Melanoma",              severity: "high",   color: "#dc2626" },
+  { code: "bcc",   name: "Basal Cell Carcinoma",  severity: "high",   color: "#f97316" },
+  { code: "akiec", name: "Actinic Keratosis",      severity: "medium", color: "#d97706" },
+  { code: "bkl",   name: "Benign Keratosis",       severity: "low",    color: "#16a34a" },
+  { code: "df",    name: "Dermatofibroma",          severity: "low",    color: "#0d9488" },
+  { code: "nv",    name: "Melanocytic Nevus",       severity: "low",    color: "#0ea5e9" },
+  { code: "vasc",  name: "Vascular Lesion",         severity: "low",    color: "#8b5cf6" },
+];
+
+// Populate classes grid
+const grid = document.getElementById("classes-grid");
+CLASSES.forEach(c => {
+  grid.innerHTML += `
+    <div class="class-pill">
+      <div class="class-dot" style="background:${c.color}"></div>
+      <div>
+        <div class="class-name">${c.name}</div>
+        <div class="class-severity">${c.severity.toUpperCase()} severity</div>
+      </div>
+    </div>`;
+});
+
+// Elements
+const dropZone    = document.getElementById("drop-zone");
+const fileInput   = document.getElementById("file-input");
+const previewWrap = document.getElementById("preview-wrap");
+const previewImg  = document.getElementById("preview-img");
+const removeBtn   = document.getElementById("remove-btn");
+const analyseBtn  = document.getElementById("analyse-btn");
+
+// State
+window.selectedFile = null;
+
+// Show image preview
+function showPreview(file) {
+  window.selectedFile = file;
+  previewImg.src = URL.createObjectURL(file);
+  previewWrap.style.display = "block";
+  analyseBtn.disabled = false;
+}
+
+// Clear image
+function clearImage() {
+  window.selectedFile = null;
+  previewImg.src = "";
+  previewWrap.style.display = "none";
+  fileInput.value = "";
+  analyseBtn.disabled = true;
+  showEmpty();
+}
+
+// File input change
+fileInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) showPreview(file);
+});
+
+// Drag and drop
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith("image/")) showPreview(file);
+});
+
+// Remove button
+removeBtn.addEventListener("click", clearImage);
+
+// UI state helpers
+function showEmpty() {
+  document.getElementById("empty-state").style.display = "";
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("result-panel").style.display = "none";
+}
+
+function showLoading() {
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("result-panel").style.display = "none";
+}
+
+function showResult(data) {
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading").style.display = "none";
+  const panel = document.getElementById("result-panel");
+  panel.style.display = "block";
+
+  const p   = data.prediction;
+  const sev = p.severity.startsWith("HIGH") ? "high" : p.severity.startsWith("MEDIUM") ? "medium" : "low";
+
+  panel.innerHTML = `
+    <div class="pred-hero ${sev}">
+      <div class="severity-dot"></div>
+      <div>
+        <div class="pred-name">${p.name}</div>
+        <div class="pred-severity">${p.severity}</div>
+      </div>
+    </div>
+    <div class="conf-section">
+      <div class="conf-label"><span>Confidence</span><span>${p.confidence}%</span></div>
+      <div class="conf-track"><div class="conf-fill" id="conf-fill" style="width:0"></div></div>
+    </div>
+    <div class="top3-title">Top 3 predictions</div>
+    ${data.top3.map((t, i) => `
+      <div class="top3-item">
+        <span class="top3-name">${t.name}</span>
+        <div class="top3-bar-wrap">
+          <div class="top3-bar ${i === 0 ? 'first' : ''}" data-pct="${t.confidence}" style="width:0"></div>
+        </div>
+        <span class="top3-pct">${t.confidence}%</span>
+      </div>`).join("")}
+    <div class="result-disclaimer">${data.disclaimer}</div>`;
+
+  // Animate bars
+  setTimeout(() => {
+    const fill = document.getElementById("conf-fill");
+    if (fill) fill.style.width = p.confidence + "%";
+    document.querySelectorAll(".top3-bar").forEach(b => {
+      b.style.width = b.dataset.pct + "%";
+    });
+  }, 50);
+}
+
+function showError(msg) {
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("loading").style.display = "none";
+  const panel = document.getElementById("result-panel");
+  panel.style.display = "block";
+  panel.innerHTML = `
+    <div class="pred-hero high" style="flex-direction:column;gap:.5rem">
+      <div class="pred-name" style="font-size:17px">Analysis failed</div>
+      <div class="pred-severity">${msg}</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-top:.75rem">
+      Make sure the backend is running at <code>127.0.0.1:8000</code>.
+    </p>`;
+}
+
+// Analyse button
+analyseBtn.addEventListener("click", async () => {
+  const file = window.selectedFile || fileInput.files[0];
+  if (!file) { alert("Please select an image first."); return; }
+
+  showLoading();
+  analyseBtn.disabled = true;
+
+  const t0   = Date.now();
+  const form = new FormData();
+  form.append("file", file);
+
+  try {
+    const res  = await fetch(`${API}/predict`, { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Server error");
+    document.getElementById("stat-time").textContent = (Date.now() - t0) + " ms";
+    showResult(data);
+  } catch (err) {
+    showError(err.message || "Could not connect to backend.");
+  } finally {
+    analyseBtn.disabled = false;
+  }
+});
+
+// Check backend health on load
+(async () => {
+  try {
+    const res = await fetch(`${API}/health`);
+    if (res.ok) document.getElementById("stat-acc").textContent = "~83%";
+  } catch (_) {}
+})();
+</script>
+</body>
+</html>
